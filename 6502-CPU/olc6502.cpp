@@ -42,7 +42,7 @@ olc6502::olc6502() {
 }
 
 olc6502::~olc6502() {
-	// nothing
+	// nothing destructor does nothing
 }
 
 uint8_t olc6502::read(uint16_t a) {
@@ -419,9 +419,9 @@ uint8_t olc6502::CLV()
 uint8_t olc6502::ADC() {
 	fetch();
 	// casting to 16 bit ints
-	uint16_t temp = (uint16_t)a + (uint16_t)fetched + (uint16_t)(GetFlag(C);
+	uint16_t temp = (uint16_t)a + (uint16_t)fetched + (uint16_t)(GetFlag(C));
 	// first three flags deal with addition.. the following deals with overflow consequences
-	SetFlag(C, temp > 255));
+	SetFlag(C, temp > 255);
 	SetFlag(Z, (temp & 0x00FF) == 0);
 	SetFlag(N, temp & 0x80);
 
@@ -441,9 +441,9 @@ uint8_t olc6502::SBC() {
 
 	// invert the fetched data and just perform addition
 	uint16_t value = ((uint16_t)fetched) ^ 0xFF;
-	uint16_t temp = (uint16_t)a + value + (uint16_t)(GetFlag(C);
+	uint16_t temp = (uint16_t)a + value + (uint16_t)(GetFlag(C));
 
-	SetFlag(C, temp > 255));
+	SetFlag(C, temp > 255);
 	SetFlag(Z, (temp & 0x00FF) == 0);
 	SetFlag(N, temp & 0x80);
 	SetFlag(V, (~((uint16_t)a ^ (uint16_t)fetched) & ((uint16_t)a ^ (uint16_t)temp)) & 0x0080);
@@ -562,6 +562,38 @@ uint8_t olc6502::ASL()
 	else
 		write(addr_abs, temp & 0x00FF);
 	return 0;
+}
+
+uint8_t olc6502::BIT() {
+	fetch();
+	temp = a & fetched;
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, fetched & (1 << 7));
+	SetFlag(V, fetched & (1 << 6));
+	return 0;
+}
+
+uint8_t olc6502::BRK() {
+
+	pc++;
+	write(0x0100 + stkp, (pc >> 8) & 0x00FF);
+	stkp--;
+	write(0x0100 + stkp, pc & 0x00FF);
+	stkp--;
+
+	SetFlag(B, 1);
+	write(0x0100 + stkp, status);
+	stkp--;
+	SetFlag(B, 0);
+
+	pc = (uint16_t)read(0xFFFE) | ((uint16_t)read(0xFFFF) << 8);
+	return 0;
+
+}
+
+// compare memory and accumulation
+uint8_t olc6502::CMP() {
+
 }
 
 

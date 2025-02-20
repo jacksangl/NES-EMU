@@ -5,6 +5,8 @@
 #ifndef BUS_H
 #define BUS_H
 #include "olc6502.h"
+#include <array>
+
 class olc6502;
 
 class Bus {

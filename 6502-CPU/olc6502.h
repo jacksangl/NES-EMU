@@ -5,6 +5,8 @@
 #ifndef OLC6502_H
 #define OLC6502_H
 #include <cstdint>
+#include <string>
+#include <vector>
 #include "Bus.h"
 
 class Bus;
@@ -36,6 +38,12 @@ public:
 
 	void ConnectBus(Bus *n) {bus = n;}
 
+	void clock();
+	void reset();
+	void irq(); // interrupt signal
+	void nmi(); // non maskable interrupt signal
+
+private:
 	// addressing modes
 	uint8_t IMP();  uint8_t IMM();
 	uint8_t ZP0();  uint8_t ZPX();
@@ -62,23 +70,20 @@ public:
 
 	uint8_t XXX();
 
-	void clock();
-	void reset();
-	void irq(); // interrupt signal
-	void nmi(); // non maskable interrupt signal
-
-	uint8_t fetch();
-	uint8_t fetched = 0x00;
-
-	uint16_t addr_abs = 0x0000;
-	uint16_5 addr_rel = 0x00; // relative address due to addresses sometimes not being able to fully jump
-	uint8_t opcode = 0x00;
-	uint8_t cycles = 0; // number of cycles left
-
 private:
 	Bus *bus = nullptr;
 	uint8_t read(uint16_t a);
 	void write(uint16_t a, uint8_t d);
+	uint16_t temp = 0x0000; // A convenience variable used everywhere
+	uint16_t addr_abs = 0x0000;
+	uint16_t addr_rel = 0x00; // relative address due to addresses sometimes not being able to fully jump
+	uint8_t opcode = 0x00;
+	uint8_t cycles = 0; // number of cycles left
+	uint8_t fetched = 0x00;
+	uint8_t fetch();
+
+
+
 
 	uint8_t GetFlag(FLAGS6502 f);
 	void SetFlag(FLAGS6502 f, bool v);
