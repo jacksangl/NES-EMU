@@ -15,9 +15,13 @@ class olc6502 {
 
 public:
 	olc6502();
-	~olc6502();
+	~olc6502(); // useless
 
 
+	// does bitwise operations on fetched memory. IE for
+	// carry bit if the first bit in the fetched memory is set to 1 (true) then
+	// the carry bit flag will be set. the << is the bit in the uint8_t memory fetched
+	// the C is the 0th bit, the V flag is the 6th bit.. etc
 	enum FLAGS6502 {
 		C= (1 <<0), // Carry Bit
 		Z= (1 <<1), // Zero
@@ -36,7 +40,7 @@ public:
 	uint8_t pc = 0x0000;    // program counter
 	uint8_t status = 0x00;  // status register
 
-	void ConnectBus(Bus *n) {bus = n;}
+	void ConnectBus(Bus *n) {bus = n;} // connects CPU and bus
 
 	void clock();
 	void reset();
@@ -68,19 +72,21 @@ private:
 	uint8_t STX(); uint8_t STY(); uint8_t TAX(); uint8_t TAY();
 	uint8_t TSX(); uint8_t TXA(); uint8_t TXS(); uint8_t TYA();
 
-	uint8_t XXX();
+	uint8_t XXX(); // for any illegal opcodes or out of bound get sent to XXX opcode
 
 private:
 	Bus *bus = nullptr;
 	uint8_t read(uint16_t a);
 	void write(uint16_t a, uint8_t d);
+
 	uint16_t temp = 0x0000; // A convenience variable used everywhere
-	uint16_t addr_abs = 0x0000;
+	uint16_t addr_abs = 0x0000; // barely used. maybe 4 opcodes
 	uint16_t addr_rel = 0x00; // relative address due to addresses sometimes not being able to fully jump
+
 	uint8_t opcode = 0x00;
 	uint8_t cycles = 0; // number of cycles left
-	uint8_t fetched = 0x00;
-	uint8_t fetch();
+	uint8_t fetched = 0x00; // 8 bit address used in many opcodes. reads the absolute address currently
+	uint8_t fetch(); // populates fetched varriable
 
 
 

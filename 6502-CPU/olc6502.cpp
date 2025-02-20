@@ -42,7 +42,7 @@ olc6502::olc6502() {
 }
 
 olc6502::~olc6502() {
-	// nothing destructor does nothing
+	// default
 }
 
 uint8_t olc6502::read(uint16_t a) {
@@ -70,7 +70,7 @@ void olc6502::clock() {
 	cycles --;
 }
 
-uint8_t olc6502::GetFlag(FLAGS6502 f) {
+uint8_t olc6502::GetFlag(FLAGS6502 f) { // NOLINT(*-make-member-function-const)
 	// perform a bitwise AND between status and f
 	if ((status & f) > 0)
 		return 1;
@@ -200,8 +200,8 @@ uint8_t olc6502::IZX() {
 	uint16_t t = read(pc);
 	pc++;
 
-	uint16_t lo = read((uint16_t)(t+ (uint16_t)x) & 0x00FF);
-	uint16_t hi = read((uint16_t)(t+ (uint16_t)x+1 ) & 0x00FF);
+	uint16_t lo = read(t + static_cast<uint16_t>(x) & 0x00FF);
+	uint16_t hi = read(t+ static_cast<uint16_t>(x)+1 & 0x00FF);
 
 	addr_abs = (hi << 8) | lo;
 
@@ -229,7 +229,7 @@ uint8_t olc6502::IZY() {
 uint8_t olc6502::REL() {
 	addr_rel = read(pc);
 	pc++;
-	if (addr_rel && 0x80)
+	if (addr_rel & 0x80)
 		addr_rel |= 0xFF00;
 	return 0;
 }
@@ -346,7 +346,7 @@ uint8_t olc6502::BPL()
 		if ((addr_abs & 0xFF00) != (pc & 0xFF00))
 			cycles++;
 
-		pc = addr_abs;
+
 	}
 	return 0;
 }
@@ -419,7 +419,7 @@ uint8_t olc6502::CLV()
 uint8_t olc6502::ADC() {
 	fetch();
 	// casting to 16 bit ints
-	uint16_t temp = (uint16_t)a + (uint16_t)fetched + (uint16_t)(GetFlag(C));
+	uint16_t temp = static_cast<uint16_t>(a) + static_cast<uint16_t>(fetched) + static_cast<uint16_t>((GetFlag(C)));
 	// first three flags deal with addition.. the following deals with overflow consequences
 	SetFlag(C, temp > 255);
 	SetFlag(Z, (temp & 0x00FF) == 0);
@@ -430,7 +430,7 @@ uint8_t olc6502::ADC() {
 	// invert it and if both are 1 then overflow has occurred
 	// JACK SANGL DID NOT CREATE THIS MATH...
 	// v = (A^R)&~(A^M) tells if overflow has occurred
-	SetFlag(V, (~((uint16_t)a ^ (uint16_t)fetched) & ((uint16_t)a ^ (uint16_t)temp)) & 0x0080);
+	SetFlag(V, (~(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(fetched)) & (static_cast<uint16_t>(a)^ temp)) & 0x0080);
 	return 1;
 
 }
@@ -440,13 +440,13 @@ uint8_t olc6502::SBC() {
 	fetch();
 
 	// invert the fetched data and just perform addition
-	uint16_t value = ((uint16_t)fetched) ^ 0xFF;
-	uint16_t temp = (uint16_t)a + value + (uint16_t)(GetFlag(C));
+	uint16_t value = (static_cast<uint16_t>(fetched)) ^ 0xFF;
+	uint16_t temp = static_cast<uint16_t>(a) + value + static_cast<uint16_t>((GetFlag(C)));
 
 	SetFlag(C, temp > 255);
 	SetFlag(Z, (temp & 0x00FF) == 0);
 	SetFlag(N, temp & 0x80);
-	SetFlag(V, (~((uint16_t)a ^ (uint16_t)fetched) & ((uint16_t)a ^ (uint16_t)temp)) & 0x0080);
+	SetFlag(V, (~(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(fetched)) & (static_cast<uint16_t>(a) ^ temp)) & 0x0080); // he casts temp to uint16_t if errors TODO!
 
 	return 1;
 }
@@ -497,9 +497,9 @@ void olc6502:: irq() {
 		write(0x0100+stkp, pc & 0x00FF);
 		stkp--;
 
-		SetFlag(B, 0);
-		SetFlag(U, 1);
-		SetFlag(I, 1);
+		SetFlag(B, false);
+		SetFlag(U, true);
+		SetFlag(I, true);
 		write(0x0100 + stkp, status);
 		stkp--;
 
@@ -522,9 +522,9 @@ void olc6502::nmi()
 	write(0x0100 + stkp, pc & 0x00FF);
 	stkp--;
 
-	SetFlag(B, 0);
-	SetFlag(U, 1);
-	SetFlag(I, 1);
+	SetFlag(B, false);
+	SetFlag(U, true);
+	SetFlag(I, true);
 	write(0x0100 + stkp, status);
 	stkp--;
 
@@ -544,16 +544,16 @@ uint8_t olc6502::RTI() {
 	status &= ~U;
 
 	stkp++;
-	pc = (uint16_t)read(0x0100+stkp);
+	pc = static_cast<uint16_t>(read(0x0100+stkp));
 	stkp++;
-	pc = (uint16_t)read(0x0100+stkp) << 8;
+	pc = static_cast<uint16_t>(read(0x0100+stkp)) << 8;
 	return 0;
 }
 
 uint8_t olc6502::ASL()
 {
 	fetch();
-	temp = (uint16_t)fetched << 1;
+	temp = static_cast<uint16_t>(fetched) << 1;
 	SetFlag(C, (temp & 0xFF00) > 0);
 	SetFlag(Z, (temp & 0x00FF) == 0x00);
 	SetFlag(N, temp & 0x80);
@@ -581,20 +581,186 @@ uint8_t olc6502::BRK() {
 	write(0x0100 + stkp, pc & 0x00FF);
 	stkp--;
 
-	SetFlag(B, 1);
+	SetFlag(B, true);
 	write(0x0100 + stkp, status);
 	stkp--;
-	SetFlag(B, 0);
+	SetFlag(B, false);
 
-	pc = (uint16_t)read(0xFFFE) | ((uint16_t)read(0xFFFF) << 8);
+	pc = static_cast<uint16_t>(read(0xFFFE)) | (static_cast<uint16_t>(read(0xFFFF)) << 8);
 	return 0;
 
 }
 
-// compare memory and accumulation
+// compare memory and accumulation // FIRST ONE DONE BY ME
 uint8_t olc6502::CMP() {
+	fetch();
+	temp = a - fetched;
+	SetFlag(N, temp & 0x80);
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(C, a >= 0);
+	return 0;
+}
+
+// compare mmeory and index x
+uint8_t olc6502::CPX() {
+	fetch();
+	temp = static_cast<uint16_t>(x) - fetched;
+	SetFlag(N, temp & 0x80);
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(C, a >= 0);
+	return 0;
+}
+
+// compare mmeory and index y
+uint8_t olc6502::CPY() {
+	fetch();
+	temp = static_cast<uint16_t>(y) - fetched;
+	SetFlag(N, temp & 0x80);
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(C, a >= 0);
+	return 0;
+}
+
+uint8_t olc6502::DEC() {
+	fetch();
+	temp = (fetched-1);
+	write(addr_abs, temp & 0x00FF); // need to further look into why he added this. I did everything else tho
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, temp & 0x80);
+	return 0;
+}
+
+
+uint8_t olc6502::DEX() {
+	x--;
+	SetFlag(Z, (x & 0x00FF) == 0x00);
+	SetFlag(N, x & 0x80);
+	return 0;
+}
+
+// decrement
+uint8_t olc6502::DEY() {
+	y--;
+	SetFlag(Z, (y & 0x00FF) == 0x00);
+	SetFlag(N, y & 0x80);
+	return 0;
+}
+
+//
+uint8_t olc6502::EOR() {
+	fetch();
+	// perform bitwise operation
+	a = a ^ fetched;
+	// if result of logic and results in all numbers being 0. set zero flag
+	SetFlag(Z, a == 0x00);
+	// set negative flag if bit 7 is = to 1
+	SetFlag(N, a & 0x80);
+
+	// return 1 due to requiring extra clock cycles
+	return 1;
+}
+
+uint8_t olc6502::INC() {
+	fetch();
+	temp = (fetched+1);
+	write(addr_abs, temp & 0x00FF); // need to further look into why he added this. I did everything else tho
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, temp & 0x80);
+	return 0;
+}
+
+uint8_t olc6502::INX() {
+	x++;
+	SetFlag(Z, (y & 0x00FF) == 0x00);
+	SetFlag(N, y & 0x80);
+	return 0;
+}
+
+uint8_t olc6502::INY() {
+	y++;
+	SetFlag(Z, (y & 0x00FF) == 0x00);
+	SetFlag(N, y & 0x80);
+	return 0;
+}
+
+uint8_t olc6502::JMP() {
+	pc = addr_abs;
+	return 0;
+}
+
+uint8_t olc6502::JSR() {
+
+	return 0;
+}
+
+uint8_t olc6502::LDA() {
+
+	return 0;
+}
+
+uint8_t olc6502::LDX() {
+
+	return 0;
+}
+
+uint8_t olc6502::LDY() {
 
 }
 
+uint8_t olc6502::LSR() {
+
+}
+
+uint8_t olc6502::NOP() {
+
+}
+
+uint8_t olc6502::ORA() {
+
+}
+
+uint8_t olc6502::PHP() {
+
+}
+
+uint8_t olc6502::PLP() {
+
+}
+
+uint8_t olc6502::ROL() {
+
+}
+
+uint8_t olc6502::ROR() {
+
+}
+
+uint8_t olc6502::RTS() {
+
+}
+
+uint8_t olc6502::SEC() {
+
+}
+
+uint8_t olc6502::SED() {
+
+}
+
+uint8_t olc6502::SEI() {
+
+}
+
+uint8_t olc6502::STA() {
+
+}
+
+uint8_t olc6502::STX() {
+
+}
+
+uint8_t olc6502::STY() {
+
+}
 
 
