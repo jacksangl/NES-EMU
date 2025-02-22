@@ -46,11 +46,11 @@ olc6502::~olc6502() {
 }
 
 uint8_t olc6502::read(uint16_t a) {
-  return bus->read(a, false);
+	return bus->read(a, false);
 }
 
 void olc6502::write(uint16_t a, uint8_t d) {
-  bus->write(a, d);
+	bus->write(a, d);
 }
 
 void olc6502::clock() {
@@ -597,7 +597,7 @@ uint8_t olc6502::CMP() {
 	temp = a - fetched;
 	SetFlag(N, temp & 0x80);
 	SetFlag(Z, (temp & 0x00FF) == 0x00);
-	SetFlag(C, a >= 0);
+	SetFlag(C, a >= fetched);
 	return 0;
 }
 
@@ -607,7 +607,7 @@ uint8_t olc6502::CPX() {
 	temp = static_cast<uint16_t>(x) - fetched;
 	SetFlag(N, temp & 0x80);
 	SetFlag(Z, (temp & 0x00FF) == 0x00);
-	SetFlag(C, a >= 0);
+	SetFlag(C, x >= fetched);
 	return 0;
 }
 
@@ -617,7 +617,7 @@ uint8_t olc6502::CPY() {
 	temp = static_cast<uint16_t>(y) - fetched;
 	SetFlag(N, temp & 0x80);
 	SetFlag(Z, (temp & 0x00FF) == 0x00);
-	SetFlag(C, a >= 0);
+	SetFlag(C, y >= fetched);
 	return 0;
 }
 
@@ -688,79 +688,240 @@ uint8_t olc6502::JMP() {
 	return 0;
 }
 
+
 uint8_t olc6502::JSR() {
+	pc --;
+	write(0x0100 + stkp, (pc >> 8) & 0x00FF);
+	stkp--;
+	write(0x0100 + stkp, pc & 0x00FF);
+	stkp--;
+	pc = addr_abs;
 
 	return 0;
 }
-
+// load accumulator
 uint8_t olc6502::LDA() {
+	fetch();
+	a = fetched;
+
+	SetFlag(Z, a == 0x00);
+	SetFlag(N, a & 0x80);
 
 	return 0;
 }
-
+// load x register
 uint8_t olc6502::LDX() {
+	fetch();
+	x = fetched;
+
+	SetFlag(Z, a == 0x00);
+	SetFlag(N, a & 0x80);
+
+	return 0;
+}
+// load y register
+uint8_t olc6502::LDY() {
+	fetch();
+	y = fetched;
+
+	SetFlag(Z, a == 0x00);
+	SetFlag(N, a & 0x80);
 
 	return 0;
 }
 
-uint8_t olc6502::LDY() {
-
-}
-
+// didnt understand this function and copied it
 uint8_t olc6502::LSR() {
-
+	fetch();
+	SetFlag(C, fetched & 0x0001);
+	temp = fetched >> 1;
+	SetFlag(Z, (temp & 0x00FF) == 0x0000);
+	SetFlag(N, temp & 0x0080);
+	if (lookup[opcode].addrmode == &olc6502::IMP)
+		a = temp & 0x00FF;
+	else
+		write(addr_abs, temp & 0x00FF);
+	return 0;
 }
 
+// Consumes cycles/ added switch statment due to apparently javidx9 and the wiki said NES
+// games unintentially will use illegal OPcodes
+// making extra cycles for those cases
 uint8_t olc6502::NOP() {
-
+		switch (opcode) {
+			case 0x1C:
+			case 0x3C:
+			case 0x5C:
+			case 0x7C:
+			case 0xDC:
+			case 0xFC:
+				return 1;
+			default:
+				break;
+		}
+		return 0;
 }
+
 
 uint8_t olc6502::ORA() {
+	fetch();
+	// perform bitwise logical or operation
+	a = a | fetched;
+	// if result of logic and results in all numbers being 0. set zero flag
+	SetFlag(Z, a == 0x00);
+	// set negative flag if bit 7 is = to 1
+	SetFlag(N, a & 0x80);
 
+	// return 1 due to requiring extra clock cycles
+	return 1;
 }
 
+// Push the proccesor status
 uint8_t olc6502::PHP() {
+	write(0x0100 + stkp, status | B | U);
+	SetFlag(B, false);
 
+	SetFlag(U, false);
+
+	stkp--;
+	return 0;
 }
 
+// pull processor status
+// always need to ++ the stkp before reading and -- after writing
 uint8_t olc6502::PLP() {
+	stkp++;
+	status = (read(0x0100+stkp));
 
+	// can set the U flag to true. no purpose however so idc
+	return 0;
 }
 
-uint8_t olc6502::ROL() {
-
+uint8_t olc6502::ROL()
+{
+	fetch();
+	temp = static_cast<uint16_t>((fetched << 1)) | GetFlag(C);
+	SetFlag(C, temp & 0xFF00);
+	SetFlag(Z, (temp & 0x00FF) == 0x0000);
+	SetFlag(N, temp & 0x0080);
+	if (lookup[opcode].addrmode == &olc6502::IMP)
+		a = temp & 0x00FF;
+	else
+		write(addr_abs, temp & 0x00FF);
+	return 0;
 }
 
-uint8_t olc6502::ROR() {
-
+uint8_t olc6502::ROR()
+{
+	fetch();
+	temp = static_cast<uint16_t>((GetFlag(C) << 7)) | (fetched >> 1);
+	SetFlag(C, fetched & 0x01);
+	SetFlag(Z, (temp & 0x00FF) == 0x00);
+	SetFlag(N, temp & 0x0080);
+	if (lookup[opcode].addrmode == &olc6502::IMP)
+		a = temp & 0x00FF;
+	else
+		write(addr_abs, temp & 0x00FF);
+	return 0;
 }
 
+// reads stack address minus one and sets it to the program counter.
+// need to increment pc++ bc we are currently 1 step back.
 uint8_t olc6502::RTS() {
+	stkp++;
+	uint16_t lo = (static_cast<uint16_t>(read(stkp+0x0100)));
 
+	stkp++;
+	uint16_t hi = (static_cast<uint16_t>(read(stkp+0x0100)));
+	pc = (hi << 8 | lo);
+
+	pc++;
+	return 0;
 }
 
+// set carry flag
 uint8_t olc6502::SEC() {
+	SetFlag(C, true);
 
+	return 0;
 }
 
+// set decmimal flag- I think unused
 uint8_t olc6502::SED() {
+	SetFlag(D, true);
 
+	return 0;
 }
 
+// set interupt flag
 uint8_t olc6502::SEI() {
+	SetFlag(I, true);
 
+	return 0;
 }
 
+// store accumulator
 uint8_t olc6502::STA() {
+	write(addr_abs, a);
 
+	return 0;
 }
 
+// store x register
 uint8_t olc6502::STX() {
+	write(addr_abs, x);
 
+	return 0;
 }
 
+// store y register
 uint8_t olc6502::STY() {
+	write(addr_abs, y);
 
+	return 0;
 }
 
+uint8_t olc6502::TAX() {
+	x = a;
+	SetFlag(Z, x == 0x00);
+	SetFlag(N, x & 0x80);
 
+	return 0;
+}
+
+uint8_t olc6502::TAY() {
+	y = a;
+	SetFlag(Z, y == 0x00);
+	SetFlag(N, y & 0x80);
+	return 0;
+}
+
+uint8_t olc6502::TSX() {
+	x = stkp;
+	SetFlag(Z, x == 0x00);
+	SetFlag(N, x & 0x80);
+	return 0;
+}
+
+uint8_t olc6502::TXA() {
+	a = x;
+	SetFlag(Z, a == 0x00);
+	SetFlag(N, a & 0x80);
+	return 0;
+}
+
+uint8_t olc6502::TXS() {
+	stkp = x;
+	return 0;
+}
+
+uint8_t olc6502::TYA() {
+	a = y;
+	SetFlag(Z, a == 0x00);
+	SetFlag(N, a & 0x80);
+	return 0;
+}
+
+uint8_t olc6502::XXX() {
+	return 0;
+}

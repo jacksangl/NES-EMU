@@ -80,7 +80,7 @@ private:
 	void write(uint16_t a, uint8_t d);
 
 	uint16_t temp = 0x0000; // A convenience variable used everywhere
-	uint16_t addr_abs = 0x0000; // barely used. maybe 4 opcodes
+	uint16_t addr_abs = 0x0000;
 	uint16_t addr_rel = 0x00; // relative address due to addresses sometimes not being able to fully jump
 
 	uint8_t opcode = 0x00;
