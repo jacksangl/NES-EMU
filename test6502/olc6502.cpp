@@ -5,6 +5,9 @@
 #include "olc6502.h"
 #include "Bus.h"
 
+
+std::vector<INSTRUCTION> lookup;
+
 olc6502::olc6502() {
 
 	// Assembles the translation table. It's big, it's ugly, but it yields a convenient way
@@ -18,7 +21,7 @@ olc6502::olc6502() {
 	// or else it will be much much larger :D
 
 	// The table is one big initializer list of initializer lists...
-	/* copied from the great javidx9- https://github.com/OneLoneCoder/ */
+	/* copied from javidx9- https://github.com/OneLoneCoder/ */
 	using a = olc6502;
 	lookup =
 	{
@@ -46,11 +49,11 @@ olc6502::~olc6502() {
 }
 
 uint8_t olc6502::read(uint16_t a) {
-	return bus->read(a, false);
+	return bus->cpuRead(a, false);
 }
 
 void olc6502::write(uint16_t a, uint8_t d) {
-	bus->write(a, d);
+	bus->cpuWrite(a, d);
 }
 
 void olc6502::clock() {
@@ -200,8 +203,8 @@ uint8_t olc6502::IZX() {
 	uint16_t t = read(pc);
 	pc++;
 
-	uint16_t lo = read(t + static_cast<uint16_t>(x) & 0x00FF);
-	uint16_t hi = read(t+ static_cast<uint16_t>(x)+1 & 0x00FF);
+	uint16_t lo = read((t + static_cast<uint16_t>(x)) & 0x00FF);     //  Proper precedence ** claude
+	uint16_t hi = read((t + static_cast<uint16_t>(x) + 1) & 0x00FF); //  Proper precedence
 
 	addr_abs = (hi << 8) | lo;
 
@@ -289,7 +292,7 @@ uint8_t olc6502::BCC()
 // branch if equal
 uint8_t olc6502::BEQ()
 {
-	if (GetFlag(Z) == 0)
+	if (GetFlag(Z) == 1)
 	{
 		cycles++;
 		addr_abs = pc + addr_rel;
@@ -346,6 +349,8 @@ uint8_t olc6502::BPL()
 		if ((addr_abs & 0xFF00) != (pc & 0xFF00))
 			cycles++;
 
+		// missed this claude picked it up
+		pc = addr_abs;
 
 	}
 	return 0;
@@ -448,6 +453,7 @@ uint8_t olc6502::SBC() {
 	SetFlag(N, temp & 0x80);
 	SetFlag(V, (~(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(fetched)) & (static_cast<uint16_t>(a) ^ temp)) & 0x0080); // he casts temp to uint16_t if errors TODO!
 
+	a = temp & 0x00FF;
 	return 1;
 }
 
@@ -462,7 +468,7 @@ uint8_t olc6502::PHA() {
 
 uint8_t olc6502::PLA() {
 	stkp++;
-	a = read(0x0100 + stkp == 0x00);
+	a = read(0x0100 + stkp);
 	SetFlag(Z, a == 0x00);
 	SetFlag(N, a & 0x80);
 	return 0;
@@ -472,13 +478,13 @@ void olc6502::reset() {
 	a = 0;
 	x = 0;
 	y = 0;
-	stkp = 0;
+	stkp = 0xFD;
 	status = 0x00 | U;
 
-	uint16_t lo = read(addr_abs + 0);
-	uint16_t hi = read(addr_abs + 1);
+	uint16_t lo = read(0xFFFC + 0);
+	uint16_t hi = read(0xFFFC + 1);
 
-	pc (hi << 8) | lo;
+	pc = (hi << 8) | lo;
 
 	addr_rel = 0x0000;
 	addr_abs = 0x0000;
@@ -671,8 +677,8 @@ uint8_t olc6502::INC() {
 
 uint8_t olc6502::INX() {
 	x++;
-	SetFlag(Z, (y & 0x00FF) == 0x00);
-	SetFlag(N, y & 0x80);
+	SetFlag(Z, (x & 0x00FF) == 0x00);
+	SetFlag(N, x & 0x80);
 	return 0;
 }
 
@@ -714,18 +720,18 @@ uint8_t olc6502::LDX() {
 	fetch();
 	x = fetched;
 
-	SetFlag(Z, a == 0x00);
-	SetFlag(N, a & 0x80);
+	SetFlag(Z, x == 0x00);  // Check x register
+	SetFlag(N, x & 0x80);   // Check x register
 
 	return 0;
 }
-// load y register
+
 uint8_t olc6502::LDY() {
 	fetch();
 	y = fetched;
 
-	SetFlag(Z, a == 0x00);
-	SetFlag(N, a & 0x80);
+	SetFlag(Z, y == 0x00);  //  Check y register
+	SetFlag(N, y & 0x80);   //  Check y register
 
 	return 0;
 }

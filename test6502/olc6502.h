@@ -37,7 +37,7 @@ public:
 	uint8_t x = 0x00;       // X register
 	uint8_t y = 0x00;       // Y register
 	uint8_t stkp = 0x00;    // Stack pointer (points to location or bus
-	uint8_t pc = 0x0000;    // program counter
+	uint16_t pc = 0x0000;    // program counter
 	uint8_t status = 0x00;  // status register
 
 	void ConnectBus(Bus *n) {bus = n;} // connects CPU and bus
@@ -100,7 +100,8 @@ private:
 		uint8_t(olc6502::*addrmode)(void) = nullptr; // function ptr to address mode.
 		uint8_t	cycles = 0; // number of clock cycles for function to execute
 	};
-	std:: vector<INSTRUCTION> lookup;
+	extern std:: vector<INSTRUCTION> lookup;
+
 
 
 
