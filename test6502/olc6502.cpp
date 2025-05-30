@@ -4,7 +4,9 @@
 
 #include "olc6502.h"
 #include "Bus.h"
-
+#include <iostream>
+#include <map>
+#include <string>
 
 std::vector<INSTRUCTION> lookup;
 
@@ -61,6 +63,7 @@ void olc6502::clock() {
 		// get opcode at current program counter location
 		opcode = read(pc);
 		pc++;
+		// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 
 		// get starting number of cycles
 		cycles = lookup[opcode].cycles;
@@ -69,6 +72,7 @@ void olc6502::clock() {
 		uint8_t additional_cycle_2 = (this->*lookup[opcode].operate)();
 
 		cycles += (additional_cycle_1 & additional_cycle_2);
+
 	}
 	cycles --;
 }
@@ -101,6 +105,7 @@ uint8_t olc6502::IMP() {
 // immediate mode addressing. data is supplied as part of the instruction. next byte of data is the next instruction
 uint8_t olc6502::IMM() {
 	addr_abs = pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	return 0;
 }
 
@@ -108,6 +113,7 @@ uint8_t olc6502::IMM() {
 uint8_t olc6502::ZP0() {
 	addr_abs = read(pc);
 	pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	addr_abs &= 0x00FF;
 	return 0;
 }
@@ -116,6 +122,7 @@ uint8_t olc6502::ZP0() {
 uint8_t olc6502::ZPX() {
 	addr_abs = (read(pc) + x);
 	pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	addr_abs &= 0x00FF;
 	return 0;
 }
@@ -124,6 +131,7 @@ uint8_t olc6502::ZPX() {
 uint8_t olc6502::ZPY() {
 	addr_abs = (read(pc) + y);
 	pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	addr_abs &= 0x00FF;
 	return 0;
 }
@@ -132,8 +140,10 @@ uint8_t olc6502::ZPY() {
 uint8_t olc6502::ABS() {
 	uint16_t lo = read(pc);
 	pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	uint16_t hi = read(pc);
 	pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 
 	addr_abs = (hi << 8 | lo);
 
@@ -144,8 +154,10 @@ uint8_t olc6502::ABS() {
 uint8_t olc6502::ABX() {
 	uint16_t lo = read(pc);
 	pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	uint16_t hi = read(pc);
 	pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 
 	// read in base address above - then offset by the x address register
 	addr_abs = (hi << 8 | lo);
@@ -162,8 +174,10 @@ uint8_t olc6502::ABX() {
 uint8_t olc6502::ABY() {
 	uint16_t lo = read(pc);
 	pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	uint16_t hi = read(pc);
 	pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 
 	// read in base address above - then offset by the x address register
 	addr_abs = (hi << 8 | lo);
@@ -185,9 +199,10 @@ uint8_t olc6502::ABY() {
 uint8_t olc6502::IND() {
 	uint16_t ptr_lo = read(pc);
 	pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	uint16_t ptr_hi = read(pc);
 	pc++;
-
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	uint16_t ptr = (ptr_hi << 8) | ptr_lo;
 	// BUG STATEMENT FOR NES ONLY TODO
 	if (ptr_lo == 0xFF) {
@@ -202,7 +217,7 @@ uint8_t olc6502::IND() {
 uint8_t olc6502::IZX() {
 	uint16_t t = read(pc);
 	pc++;
-
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	uint16_t lo = read((t + static_cast<uint16_t>(x)) & 0x00FF);     //  Proper precedence ** claude
 	uint16_t hi = read((t + static_cast<uint16_t>(x) + 1) & 0x00FF); //  Proper precedence
 
@@ -215,7 +230,7 @@ uint8_t olc6502::IZX() {
 uint8_t olc6502::IZY() {
 	uint16_t t = read(pc);
 	pc++;
-
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	uint16_t lo = read(t & 0x00FF);
 	uint16_t hi = read((t+1) & 0x00FF);
 
@@ -232,6 +247,7 @@ uint8_t olc6502::IZY() {
 uint8_t olc6502::REL() {
 	addr_rel = read(pc);
 	pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	if (addr_rel & 0x80)
 		addr_rel |= 0xFF00;
 	return 0;
@@ -270,6 +286,7 @@ uint8_t olc6502::BCS() {
 			cycles++;
 		pc = addr_abs;
 	}
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	return 0;
 }
 
@@ -286,6 +303,7 @@ uint8_t olc6502::BCC()
 
 		pc = addr_abs;
 	}
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	return 0;
 }
 
@@ -302,6 +320,7 @@ uint8_t olc6502::BEQ()
 
 		pc = addr_abs;
 	}
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	return 0;
 }
 
@@ -318,6 +337,8 @@ uint8_t olc6502::BMI()
 
 		pc = addr_abs;
 	}
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
+
 	return 0;
 }
 
@@ -334,6 +355,7 @@ uint8_t olc6502::BNE()
 
 		pc = addr_abs;
 	}
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	return 0;
 }
 
@@ -353,6 +375,7 @@ uint8_t olc6502::BPL()
 		pc = addr_abs;
 
 	}
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	return 0;
 }
 
@@ -369,6 +392,7 @@ uint8_t olc6502::BVC()
 
 		pc = addr_abs;
 	}
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	return 0;
 }
 
@@ -386,6 +410,7 @@ uint8_t olc6502::BVS()
 
 		pc = addr_abs;
 	}
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	return 0;
 }
 
@@ -436,6 +461,9 @@ uint8_t olc6502::ADC() {
 	// JACK SANGL DID NOT CREATE THIS MATH...
 	// v = (A^R)&~(A^M) tells if overflow has occurred
 	SetFlag(V, (~(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(fetched)) & (static_cast<uint16_t>(a)^ temp)) & 0x0080);
+
+	a = temp & 0x00FF;
+
 	return 1;
 
 }
@@ -451,7 +479,7 @@ uint8_t olc6502::SBC() {
 	SetFlag(C, temp > 255);
 	SetFlag(Z, (temp & 0x00FF) == 0);
 	SetFlag(N, temp & 0x80);
-	SetFlag(V, (~(static_cast<uint16_t>(a) ^ static_cast<uint16_t>(fetched)) & (static_cast<uint16_t>(a) ^ temp)) & 0x0080); // he casts temp to uint16_t if errors TODO!
+	SetFlag(V, (~(static_cast<uint16_t>(a) ^ value) & (static_cast<uint16_t>(a) ^ temp)) & 0x0080); // he casts temp to uint16_t if errors TODO!
 
 	a = temp & 0x00FF;
 	return 1;
@@ -479,12 +507,16 @@ void olc6502::reset() {
 	x = 0;
 	y = 0;
 	stkp = 0xFD;
-	status = 0x00 | U;
+	status = 0x00 | U | I;
 
 	uint16_t lo = read(0xFFFC + 0);
 	uint16_t hi = read(0xFFFC + 1);
 
+	// std::cout << "[RESET_VECTOR_READ] Value from 0xFFFC (lo_byte): 0x" << std::hex << lo << std::endl;
+	// std::cout << "[RESET_VECTOR_READ] Value from 0xFFFD (hi_byte): 0x" << std::hex << hi << std::endl;
+
 	pc = (hi << 8) | lo;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 
 	addr_rel = 0x0000;
 	addr_abs = 0x0000;
@@ -513,6 +545,7 @@ void olc6502:: irq() {
 		uint16_t lo = read(addr_abs +0);
 		uint16_t hi = read(addr_abs +1);
 		pc = (hi<< 8) | lo;
+		// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 
 		cycles = 7;
 	}
@@ -538,6 +571,7 @@ void olc6502::nmi()
 	uint16_t lo = read(addr_abs + 0);
 	uint16_t hi = read(addr_abs + 1);
 	pc = (hi << 8) | lo;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 
 	cycles = 8;
 }
@@ -550,9 +584,12 @@ uint8_t olc6502::RTI() {
 	status &= ~U;
 
 	stkp++;
-	pc = static_cast<uint16_t>(read(0x0100+stkp));
+	uint16_t lo = read(0x0100 + stkp);
 	stkp++;
-	pc = static_cast<uint16_t>(read(0x0100+stkp)) << 8;
+	uint16_t hi = read(0x0100 + stkp);
+	pc = (hi << 8) | lo;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
+
 	return 0;
 }
 
@@ -582,17 +619,20 @@ uint8_t olc6502::BIT() {
 uint8_t olc6502::BRK() {
 
 	pc++;
+
+	SetFlag(I, 1);
 	write(0x0100 + stkp, (pc >> 8) & 0x00FF);
 	stkp--;
 	write(0x0100 + stkp, pc & 0x00FF);
 	stkp--;
 
-	SetFlag(B, true);
+	SetFlag(B, 1);
 	write(0x0100 + stkp, status);
 	stkp--;
-	SetFlag(B, false);
+	SetFlag(B, 0);
 
-	pc = static_cast<uint16_t>(read(0xFFFE)) | (static_cast<uint16_t>(read(0xFFFF)) << 8);
+	pc = static_cast<uint16_t>(read(0xFFFE)) | (static_cast<uint16_t>(read (0xFFFF)) << 8);
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << static_cast<int>(opcode) << std::endl;
 	return 0;
 
 }
@@ -691,6 +731,7 @@ uint8_t olc6502::INY() {
 
 uint8_t olc6502::JMP() {
 	pc = addr_abs;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	return 0;
 }
 
@@ -702,6 +743,7 @@ uint8_t olc6502::JSR() {
 	write(0x0100 + stkp, pc & 0x00FF);
 	stkp--;
 	pc = addr_abs;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 
 	return 0;
 }
@@ -785,9 +827,9 @@ uint8_t olc6502::ORA() {
 // Push the proccesor status
 uint8_t olc6502::PHP() {
 	write(0x0100 + stkp, status | B | U);
-	SetFlag(B, false);
-
-	SetFlag(U, false);
+	/*SetFlag(B, false);
+	!TODO review this change
+	SetFlag(U, false);*/
 
 	stkp--;
 	return 0;
@@ -799,6 +841,7 @@ uint8_t olc6502::PLP() {
 	stkp++;
 	status = (read(0x0100+stkp));
 
+	SetFlag(U, 1);
 	// can set the U flag to true. no purpose however so idc
 	return 0;
 }
@@ -840,8 +883,10 @@ uint8_t olc6502::RTS() {
 	stkp++;
 	uint16_t hi = (static_cast<uint16_t>(read(stkp+0x0100)));
 	pc = (hi << 8 | lo);
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 
 	pc++;
+	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	return 0;
 }
 
@@ -931,3 +976,132 @@ uint8_t olc6502::TYA() {
 uint8_t olc6502::XXX() {
 	return 0;
 }
+
+
+std::map<uint16_t, std::string> olc6502::disassemble(uint16_t nStart, uint16_t nStop)
+{
+	uint32_t addr = nStart;
+	uint8_t value = 0x00, lo = 0x00, hi = 0x00;
+	std::map<uint16_t, std::string> mapLines;
+	uint16_t line_addr = 0;
+
+	// A convenient utility to convert variables into
+	// hex strings because "modern C++"'s method with
+	// streams is atrocious
+	auto hex = [](uint32_t n, uint8_t d)
+	{
+		std::string s(d, '0');
+		for (int i = d - 1; i >= 0; i--, n >>= 4)
+			s[i] = "0123456789ABCDEF"[n & 0xF];
+		return s;
+	};
+
+	// Starting at the specified address we read an instruction
+	// byte, which in turn yields information from the lookup table
+	// as to how many additional bytes we need to read and what the
+	// addressing mode is. I need this info to assemble human readable
+	// syntax, which is different depending upon the addressing mode
+
+	// As the instruction is decoded, a std::string is assembled
+	// with the readable output
+	while (addr <= (uint32_t)nStop)
+	{
+		line_addr = addr;
+
+		// Prefix line with instruction address
+		std::string sInst = "$" + hex(addr, 4) + ": ";
+
+		// Read instruction, and get its readable name
+		uint8_t opcode = bus->cpuRead(addr, true); addr++;
+		sInst += lookup[opcode].name + " ";
+
+		// Get oprands from desired locations, and form the
+		// instruction based upon its addressing mode. These
+		// routines mimmick the actual fetch routine of the
+		// 6502 in order to get accurate data as part of the
+		// instruction
+		if (lookup[opcode].addrmode == &olc6502::IMP)
+		{
+			sInst += " {IMP}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::IMM)
+		{
+			value = bus->cpuRead(addr, true); addr++;
+			sInst += "#$" + hex(value, 2) + " {IMM}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::ZP0)
+		{
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = 0x00;
+			sInst += "$" + hex(lo, 2) + " {ZP0}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::ZPX)
+		{
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = 0x00;
+			sInst += "$" + hex(lo, 2) + ", X {ZPX}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::ZPY)
+		{
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = 0x00;
+			sInst += "$" + hex(lo, 2) + ", Y {ZPY}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::IZX)
+		{
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = 0x00;
+			sInst += "($" + hex(lo, 2) + ", X) {IZX}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::IZY)
+		{
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = 0x00;
+			sInst += "($" + hex(lo, 2) + "), Y {IZY}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::ABS)
+		{
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = bus->cpuRead(addr, true); addr++;
+			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + " {ABS}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::ABX)
+		{
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = bus->cpuRead(addr, true); addr++;
+			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", X {ABX}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::ABY)
+		{
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = bus->cpuRead(addr, true); addr++;
+			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", Y {ABY}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::IND)
+		{
+			lo = bus->cpuRead(addr, true); addr++;
+			hi = bus->cpuRead(addr, true); addr++;
+			sInst += "($" + hex((uint16_t)(hi << 8) | lo, 4) + ") {IND}";
+		}
+		else if (lookup[opcode].addrmode == &olc6502::REL)
+		{
+			value = bus->cpuRead(addr, true); addr++;
+			sInst += "$" + hex(value, 2) + " [$" + hex(addr + value, 4) + "] {REL}";
+		}
+
+		// Add the formed string to a std::map, using the instruction's
+		// address as the key. This makes it convenient to look for later
+		// as the instructions are variable in length, so a straight up
+		// incremental index is not sufficient.
+		mapLines[line_addr] = sInst;
+	}
+
+	return mapLines;
+} 
+
+
+bool olc6502::complete()
+{
+	return cycles == 0;
+}
+

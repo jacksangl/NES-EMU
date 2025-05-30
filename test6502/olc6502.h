@@ -4,10 +4,12 @@
 
 #ifndef OLC6502_H
 #define OLC6502_H
+#pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "Bus.h"
+#include <string>
+#include <map>
 
 class Bus;
 
@@ -16,6 +18,10 @@ class olc6502 {
 public:
 	olc6502();
 	~olc6502(); // useless
+	uint64_t getCycles() const { // Getter for the total cycles
+        return cycles;
+    }
+
 
 
 	// does bitwise operations on fetched memory. IE for
@@ -42,10 +48,15 @@ public:
 
 	void ConnectBus(Bus *n) {bus = n;} // connects CPU and bus
 
+	// debugging
+	std::map<uint16_t, std::string> disassemble(uint16_t nStart, uint16_t nStop);
+
 	void clock();
 	void reset();
 	void irq(); // interrupt signal
 	void nmi(); // non maskable interrupt signal
+	bool complete(); // completes the current instruction
+
 
 private:
 	// addressing modes
@@ -87,7 +98,7 @@ private:
 	uint8_t cycles = 0; // number of cycles left
 	uint8_t fetched = 0x00; // 8 bit address used in many opcodes. reads the absolute address currently
 	uint8_t fetch(); // populates fetched varriable
-
+	uint32_t clock_count = 0; // global clocks
 
 
 
