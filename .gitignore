@@ -8,3 +8,7 @@
 /test6502/.vs
 /test6502/NES/.vs/NES
 /test6502/NES/NES/x64/Debug
+/XXX
+/cmake-build-debug
+/future
+/.vscode
