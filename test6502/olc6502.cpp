@@ -503,12 +503,8 @@ uint8_t olc6502::PLA() {
 }
 
 void olc6502::reset() {
-	a = 0;
-	x = 0;
-	y = 0;
-	stkp = 0xFD;
-	status = 0x00 | U | I;
 
+	addr_abs = 0xFFFC;
 	uint16_t lo = read(0xFFFC + 0);
 	uint16_t hi = read(0xFFFC + 1);
 
@@ -517,6 +513,12 @@ void olc6502::reset() {
 
 	pc = (hi << 8) | lo;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
+
+	a = 0;
+	x = 0;
+	y = 0;
+	stkp = 0xFD;
+	status = 0x00 | U;
 
 	addr_rel = 0x0000;
 	addr_abs = 0x0000;
