@@ -2,6 +2,7 @@
 #include "6502.h"  // Now include 6502.h here instead
 #include <fstream>
 #include <iostream>
+#include "Cartridge.h"
 
 Bus::Bus() {
     // Initialize RAM to 0x00
@@ -10,6 +11,10 @@ Bus::Bus() {
 
     // Clear RAM contents, just in case :P
     for (auto &i : cpuRam) i = 0x00;
+}
+
+Bus::~Bus() {
+    // Destructor implementation
 }
 
 uint8_t Bus::cpuRead(uint16_t addr, bool bReadOnly) {

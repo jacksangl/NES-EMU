@@ -62,8 +62,8 @@
 
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
-
-
+#include "Cartridge.h"
+#include <cstdint>
 
 class Demo_olc2C02 : public olc::PixelGameEngine
 {
