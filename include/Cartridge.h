@@ -4,9 +4,10 @@
 
 #ifndef CARTRIDGE_H
 #define CARTRIDGE_H
-#include "olc6502.h"
-#include "Bus.h"
-#include "PPU.h"
+#include <string>
+#include <vector>
+#include <memory>
+#include "Mapper.h"
 #include "Mapper_000.h"
 
 
@@ -24,6 +25,9 @@ private:
 	uint8_t nCHRBanks= 0;
 
 	std:: shared_ptr<Mapper> pMapper;
+	
+	bool bImageValid = false; // Flag to track if cartridge image is valid
+
 public:
 	// connect to 6502
 	bool cpuRead(uint16_t addr, uint8_t &data);
@@ -32,6 +36,9 @@ public:
 	// connect to ppu bus
 	bool ppuRead(uint16_t addr, uint8_t &data);
 	bool ppuWrite(uint16_t addr, uint8_t data);
+	
+	// Method to check if cartridge image is valid
+	bool ImageValid() const;
 };
 
 

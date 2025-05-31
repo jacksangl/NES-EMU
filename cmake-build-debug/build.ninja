@@ -63,8 +63,8 @@ build CMakeFiles/NES.dir/src/Cartridge.cpp.o: CXX_COMPILER__NES_unscanned_Debug 
   OBJECT_DIR = CMakeFiles/NES.dir
   OBJECT_FILE_DIR = CMakeFiles/NES.dir/src
 
-build CMakeFiles/NES.dir/src/olc6502.cpp.o: CXX_COMPILER__NES_unscanned_Debug /Users/jacksangl/CLionProjects/NES/src/olc6502.cpp || cmake_object_order_depends_target_NES
-  DEP_FILE = CMakeFiles/NES.dir/src/olc6502.cpp.o.d
+build CMakeFiles/NES.dir/src/6502.cpp.o: CXX_COMPILER__NES_unscanned_Debug /Users/jacksangl/CLionProjects/NES/src/6502.cpp || cmake_object_order_depends_target_NES
+  DEP_FILE = CMakeFiles/NES.dir/src/6502.cpp.o.d
   FLAGS = -g -std=c++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -fcolor-diagnostics
   INCLUDES = -I/Users/jacksangl/CLionProjects/NES/include
   OBJECT_DIR = CMakeFiles/NES.dir
@@ -72,6 +72,13 @@ build CMakeFiles/NES.dir/src/olc6502.cpp.o: CXX_COMPILER__NES_unscanned_Debug /U
 
 build CMakeFiles/NES.dir/src/PPU.cpp.o: CXX_COMPILER__NES_unscanned_Debug /Users/jacksangl/CLionProjects/NES/src/PPU.cpp || cmake_object_order_depends_target_NES
   DEP_FILE = CMakeFiles/NES.dir/src/PPU.cpp.o.d
+  FLAGS = -g -std=c++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -fcolor-diagnostics
+  INCLUDES = -I/Users/jacksangl/CLionProjects/NES/include
+  OBJECT_DIR = CMakeFiles/NES.dir
+  OBJECT_FILE_DIR = CMakeFiles/NES.dir/src
+
+build CMakeFiles/NES.dir/src/Mapper_000.cpp.o: CXX_COMPILER__NES_unscanned_Debug /Users/jacksangl/CLionProjects/NES/src/Mapper_000.cpp || cmake_object_order_depends_target_NES
+  DEP_FILE = CMakeFiles/NES.dir/src/Mapper_000.cpp.o.d
   FLAGS = -g -std=c++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk -fcolor-diagnostics
   INCLUDES = -I/Users/jacksangl/CLionProjects/NES/include
   OBJECT_DIR = CMakeFiles/NES.dir
@@ -85,7 +92,7 @@ build CMakeFiles/NES.dir/src/PPU.cpp.o: CXX_COMPILER__NES_unscanned_Debug /Users
 #############################################
 # Link the executable NES
 
-build NES: CXX_EXECUTABLE_LINKER__NES_Debug CMakeFiles/NES.dir/src/Bus.cpp.o CMakeFiles/NES.dir/src/Cartridge.cpp.o CMakeFiles/NES.dir/src/olc6502.cpp.o CMakeFiles/NES.dir/src/PPU.cpp.o
+build NES: CXX_EXECUTABLE_LINKER__NES_Debug CMakeFiles/NES.dir/src/Bus.cpp.o CMakeFiles/NES.dir/src/Cartridge.cpp.o CMakeFiles/NES.dir/src/6502.cpp.o CMakeFiles/NES.dir/src/PPU.cpp.o CMakeFiles/NES.dir/src/Mapper_000.cpp.o
   FLAGS = -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk
   OBJECT_DIR = CMakeFiles/NES.dir
   POST_BUILD = :

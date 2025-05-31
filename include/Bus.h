@@ -10,7 +10,7 @@
 #include <array>
 #include <cstdint>
 #include <string>
-#include "olc6502.h"
+#include "6502.h"
 #include "PPU.h"
 
 class Bus {
@@ -21,7 +21,7 @@ public:
 	std::array<uint8_t,2048> cpuRam;   // flat 64 KB RAM
 
 	PPU ppu;  // PPU instance
-	olc6502 cpu;
+	MOS6502 cpu;
 
 	std::shared_ptr<Cartridge> cart;
 

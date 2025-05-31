@@ -1,5 +1,5 @@
 #include "Bus.h"
-#include "olc6502.h"  // Now include olc6502.h here instead
+#include "6502.h"  // Now include 6502.h here instead
 #include <fstream>
 #include <iostream>
 
@@ -45,4 +45,14 @@ void Bus::reset() {
 void Bus::insertCartridge(const std::shared_ptr<Cartridge> &cartridge) {
     this->cart = cartridge;
     ppu.ConnectCartidge(cartridge);
+}
+
+void Bus::clock() {
+
+    ppu.clock();
+    // Increment system clock counter
+    if (nSystemClockCounter % 3 == 0) {
+        cpu.clock();
+    }
+    nSystemClockCounter++;
 }

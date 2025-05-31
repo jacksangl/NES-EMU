@@ -6,10 +6,13 @@
 #define PPU_H
 #include <cstdint>
 #include <array>
-#include "Cartridge.h"
-#include "olc6502.h"
-#include "Bus.h"
+#include <memory>
+#include "olcPixelGameEngine.h"
 
+// Forward declarations to avoid circular dependencies
+class Cartridge;
+class Bus;
+class MOS6502;
 
 class PPU {
 public:
@@ -38,6 +41,25 @@ private:
 	// not needed for now
 	uint8_t tblPattern[2][4096];
 	// not needed for now
+	olc::Pixel palScreen[0x40];
+	
+	// Sprite pointers for dynamic allocation
+	olc::Sprite* sprScreen; // 256x240 pixel screen
+	olc::Sprite* sprNameTable[2]; // 2 name tables
+	olc::Sprite* sprPatternTable[2]; // 2 pattern tables
+
+public:
+	// Method names to match usage in test.cpp
+	olc::Sprite& GetScreen();
+	olc::Sprite& getScreen(); // Keep both for compatibility
+	olc::Sprite& getNameTable(uint8_t i);
+	olc::Sprite& getPatternTable(uint8_t i);
+	bool frame_complete = false; // frame complete flag
+
+private:
+	int16_t scanline = 0; // current scanline
+	int16_t cycle = 0; // current cycle
+
 };
 
 

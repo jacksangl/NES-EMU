@@ -2,8 +2,8 @@
 // Created by Jack Sangl on 2/13/25.
 //
 
-#ifndef OLC6502_H
-#define OLC6502_H
+#ifndef MOS6502_H
+#define MOS6502_H
 #pragma once
 #include <cstdint>
 #include <string>
@@ -13,11 +13,11 @@
 
 class Bus;
 
-class olc6502 {
+class MOS6502 {
 
 public:
-	olc6502();
-	~olc6502(); // useless
+	MOS6502();
+	~MOS6502(); // useless
 	uint64_t getCycles() const { // Getter for the total cycles
         return cycles;
     }
@@ -107,8 +107,8 @@ private:
 	};
 	struct INSTRUCTION {
 		std::string name; // for the disassembler
-		uint8_t(olc6502::*operate)(void) = nullptr; // function ptr to opcodes
-		uint8_t(olc6502::*addrmode)(void) = nullptr; // function ptr to address mode.
+		uint8_t(MOS6502::*operate)(void) = nullptr; // function ptr to opcodes
+		uint8_t(MOS6502::*addrmode)(void) = nullptr; // function ptr to address mode.
 		uint8_t	cycles = 0; // number of clock cycles for function to execute
 	};
 	extern std:: vector<INSTRUCTION> lookup;
@@ -116,5 +116,5 @@ private:
 
 
 
-#endif //OLC6502_H
+#endif
 

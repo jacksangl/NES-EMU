@@ -10,10 +10,13 @@ include_directories(include)
 add_executable(NES
         src/Bus.cpp
         src/Cartridge.cpp
-        src/olc6502.cpp
+        src/6502.cpp
         src/PPU.cpp
         include/PPU.h
-        include/olc6502.h
+        include/6502.h
         include/Cartridge.h
         include/Bus.h
+        include/Mapper_000.h
+        src/Mapper_000.cpp
+        include/olcPixelGameEngine.h
 )

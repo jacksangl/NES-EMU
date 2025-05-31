@@ -4,11 +4,11 @@
 
 #include "Mapper.h"
 
-
 Mapper::Mapper(uint8_t prgBanks, uint8_t chrBanks) {
-	nPRGBANKS = prgBanks;
-	nCHRBANKS = chrBanks;
+	nPRGBanks = prgBanks;
+	nCHRBanks = chrBanks;
 }
-Mapper::~Mapper() {
 
+Mapper::~Mapper() {
+	// Destructor implementation
 }

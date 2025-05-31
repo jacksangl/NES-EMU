@@ -2,7 +2,7 @@
 // Created by Jack Sangl on 2/13/25.
 //
 
-#include "olc6502.h"
+#include "6502.h"
 #include "Bus.h"
 #include <iostream>
 #include <map>
@@ -10,7 +10,7 @@
 
 std::vector<INSTRUCTION> lookup;
 
-olc6502::olc6502() {
+MOS6502::MOS6502() {
 
 	// Assembles the translation table. It's big, it's ugly, but it yields a convenient way
 	// to emulate the 6502. I'm certain there are some "code-golf" strategies to reduce this
@@ -24,7 +24,7 @@ olc6502::olc6502() {
 
 	// The table is one big initializer list of initializer lists...
 	/* copied from javidx9- https://github.com/OneLoneCoder/ */
-	using a = olc6502;
+	using a = MOS6502;
 	lookup =
 	{
 		{ "BRK", &a::BRK, &a::IMM, 7 },{ "ORA", &a::ORA, &a::IZX, 6 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 8 },{ "???", &a::NOP, &a::IMP, 3 },{ "ORA", &a::ORA, &a::ZP0, 3 },{ "ASL", &a::ASL, &a::ZP0, 5 },{ "???", &a::XXX, &a::IMP, 5 },{ "PHP", &a::PHP, &a::IMP, 3 },{ "ORA", &a::ORA, &a::IMM, 2 },{ "ASL", &a::ASL, &a::IMP, 2 },{ "???", &a::XXX, &a::IMP, 2 },{ "???", &a::NOP, &a::IMP, 4 },{ "ORA", &a::ORA, &a::ABS, 4 },{ "ASL", &a::ASL, &a::ABS, 6 },{ "???", &a::XXX, &a::IMP, 6 },
@@ -46,19 +46,19 @@ olc6502::olc6502() {
 	};
 }
 
-olc6502::~olc6502() {
+MOS6502::~MOS6502() {
 	// default
 }
 
-uint8_t olc6502::read(uint16_t a) {
+uint8_t MOS6502::read(uint16_t a) {
 	return bus->cpuRead(a, false);
 }
 
-void olc6502::write(uint16_t a, uint8_t d) {
+void MOS6502::write(uint16_t a, uint8_t d) {
 	bus->cpuWrite(a, d);
 }
 
-void olc6502::clock() {
+void MOS6502::clock() {
 	if (cycles == 0) {
 		// get opcode at current program counter location
 		opcode = read(pc);
@@ -77,7 +77,7 @@ void olc6502::clock() {
 	cycles --;
 }
 
-uint8_t olc6502::GetFlag(FLAGS6502 f) { // NOLINT(*-make-member-function-const)
+uint8_t MOS6502::GetFlag(FLAGS6502 f) { // NOLINT(*-make-member-function-const)
 	// perform a bitwise AND between status and f
 	if ((status & f) > 0)
 		return 1;
@@ -85,7 +85,7 @@ uint8_t olc6502::GetFlag(FLAGS6502 f) { // NOLINT(*-make-member-function-const)
 }
 
 
-void olc6502::SetFlag(FLAGS6502 f, bool v) {
+void MOS6502::SetFlag(FLAGS6502 f, bool v) {
 	{
 		if (v)
 			status |= f;
@@ -97,20 +97,20 @@ void olc6502::SetFlag(FLAGS6502 f, bool v) {
 // Addressing Modes
 
 // implied doesnt need to do anything. but could be operating on the accumulator
-uint8_t olc6502::IMP() {
+uint8_t MOS6502::IMP() {
 	fetched = a;
 	return 0;
 }
 
 // immediate mode addressing. data is supplied as part of the instruction. next byte of data is the next instruction
-uint8_t olc6502::IMM() {
+uint8_t MOS6502::IMM() {
 	addr_abs = pc++;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	return 0;
 }
 
 // zero page addressing
-uint8_t olc6502::ZP0() {
+uint8_t MOS6502::ZP0() {
 	addr_abs = read(pc);
 	pc++;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
@@ -119,7 +119,7 @@ uint8_t olc6502::ZP0() {
 }
 
 // zero page addressing with x register offsetting
-uint8_t olc6502::ZPX() {
+uint8_t MOS6502::ZPX() {
 	addr_abs = (read(pc) + x);
 	pc++;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
@@ -128,7 +128,7 @@ uint8_t olc6502::ZPX() {
 }
 
 // zero page addressing with y register offsetting
-uint8_t olc6502::ZPY() {
+uint8_t MOS6502::ZPY() {
 	addr_abs = (read(pc) + y);
 	pc++;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
@@ -137,7 +137,7 @@ uint8_t olc6502::ZPY() {
 }
 
 //full address- makes a full 16 bit address
-uint8_t olc6502::ABS() {
+uint8_t MOS6502::ABS() {
 	uint16_t lo = read(pc);
 	pc++;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
@@ -151,7 +151,7 @@ uint8_t olc6502::ABS() {
 }
 
 // full address with x register
-uint8_t olc6502::ABX() {
+uint8_t MOS6502::ABX() {
 	uint16_t lo = read(pc);
 	pc++;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
@@ -171,7 +171,7 @@ uint8_t olc6502::ABX() {
 }
 
 // full address with Y register
-uint8_t olc6502::ABY() {
+uint8_t MOS6502::ABY() {
 	uint16_t lo = read(pc);
 	pc++;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
@@ -196,7 +196,7 @@ uint8_t olc6502::ABY() {
 // apparently the NES has a bug in  which if the supplied address is 0xFF then to read the high byte of the actual address
 // we need to cross a page boundary. not supposed to work on actual chip !! CAN REMOVE IF I WANT TO IMPLEMENT INTO ATTARI EMU OR ELSE
 // JUST REMOVE THE IF STATEMENT POSSIBLY !!
-uint8_t olc6502::IND() {
+uint8_t MOS6502::IND() {
 	uint16_t ptr_lo = read(pc);
 	pc++;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
@@ -214,7 +214,7 @@ uint8_t olc6502::IND() {
 }
 
 // indirect addressing of the 0 page with x offset
-uint8_t olc6502::IZX() {
+uint8_t MOS6502::IZX() {
 	uint16_t t = read(pc);
 	pc++;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
@@ -227,7 +227,7 @@ uint8_t olc6502::IZX() {
 }
 
 // indirect addressing of the 0 page with x offset
-uint8_t olc6502::IZY() {
+uint8_t MOS6502::IZY() {
 	uint16_t t = read(pc);
 	pc++;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
@@ -244,7 +244,7 @@ uint8_t olc6502::IZY() {
 }
 
 // relative address mode - only applies to branching instructions
-uint8_t olc6502::REL() {
+uint8_t MOS6502::REL() {
 	addr_rel = read(pc);
 	pc++;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
@@ -255,14 +255,14 @@ uint8_t olc6502::REL() {
 
 // emulating instructions
 
-uint8_t olc6502:: fetch() {
+uint8_t MOS6502:: fetch() {
 	// fetch all instructions that dont use the implied mode bc there is nothing to fetch
-	if (!(lookup[opcode].addrmode == &olc6502::IMP))
+	if (!(lookup[opcode].addrmode == &MOS6502::IMP))
 		fetched = read(addr_abs);
 	return fetched;
 }
 
-uint8_t olc6502::AND() {
+uint8_t MOS6502::AND() {
 	fetch();
 	// perform bitwise operation
 	a = a & fetched;
@@ -278,7 +278,7 @@ uint8_t olc6502::AND() {
 /*!!BRANCH IF statements TELLS CPU how far to JUMP based on the offset byte if condition false CPU does nothing !! */
 
 // branch if carry set
-uint8_t olc6502::BCS() {
+uint8_t MOS6502::BCS() {
 	if (GetFlag(C) == 1) {
 		cycles++;
 		addr_abs = pc + addr_rel;
@@ -291,7 +291,7 @@ uint8_t olc6502::BCS() {
 }
 
 // Branch if Carry Clear
-uint8_t olc6502::BCC()
+uint8_t MOS6502::BCC()
 {
 	if (GetFlag(C) == 0)
 	{
@@ -308,7 +308,7 @@ uint8_t olc6502::BCC()
 }
 
 // branch if equal
-uint8_t olc6502::BEQ()
+uint8_t MOS6502::BEQ()
 {
 	if (GetFlag(Z) == 1)
 	{
@@ -325,7 +325,7 @@ uint8_t olc6502::BEQ()
 }
 
 // branch if negative
-uint8_t olc6502::BMI()
+uint8_t MOS6502::BMI()
 {
 	if (GetFlag(N) == 1)
 	{
@@ -343,7 +343,7 @@ uint8_t olc6502::BMI()
 }
 
 // branch if not equal
-uint8_t olc6502::BNE()
+uint8_t MOS6502::BNE()
 {
 	if (GetFlag(Z) == 0)
 	{
@@ -361,7 +361,7 @@ uint8_t olc6502::BNE()
 
 
 // Branch if Positive
-uint8_t olc6502::BPL()
+uint8_t MOS6502::BPL()
 {
 	if (GetFlag(N) == 0)
 	{
@@ -380,7 +380,7 @@ uint8_t olc6502::BPL()
 }
 
 // branch if not overflowed
-uint8_t olc6502::BVC()
+uint8_t MOS6502::BVC()
 {
 	if (GetFlag(V) == 0)
 	{
@@ -398,7 +398,7 @@ uint8_t olc6502::BVC()
 
 
 // Branch if overflowed Set
-uint8_t olc6502::BVS()
+uint8_t MOS6502::BVS()
 {
 	if (GetFlag(V) == 1)
 	{
@@ -415,14 +415,14 @@ uint8_t olc6502::BVS()
 }
 
 // sets bit in status register
-uint8_t olc6502::CLC() {
+uint8_t MOS6502::CLC() {
 	SetFlag(C, false);
 	return 0;
 }
 
 
 // clear decimal Flag
-uint8_t olc6502::CLD()
+uint8_t MOS6502::CLD()
 {
 	SetFlag(D, false);
 	return 0;
@@ -430,7 +430,7 @@ uint8_t olc6502::CLD()
 
 
 // Disable Interrupts / Clear Interrupt Flag
-uint8_t olc6502::CLI()
+uint8_t MOS6502::CLI()
 {
 	SetFlag(I, false);
 	return 0;
@@ -438,7 +438,7 @@ uint8_t olc6502::CLI()
 
 
 // Instruction: Clear Overflow Flag
-uint8_t olc6502::CLV()
+uint8_t MOS6502::CLV()
 {
 	SetFlag(V, false);
 	return 0;
@@ -446,7 +446,7 @@ uint8_t olc6502::CLV()
 
 // addition- add to accumulator data fetched from memory and the carry bit
 // can chain additions of 8 bit words to larger words
-uint8_t olc6502::ADC() {
+uint8_t MOS6502::ADC() {
 	fetch();
 	// casting to 16 bit ints
 	uint16_t temp = static_cast<uint16_t>(a) + static_cast<uint16_t>(fetched) + static_cast<uint16_t>((GetFlag(C)));
@@ -469,7 +469,7 @@ uint8_t olc6502::ADC() {
 }
 
 // (SUBTRACTION) A= A-M-(1-C) | A=A+ (-M) + 1 + C
-uint8_t olc6502::SBC() {
+uint8_t MOS6502::SBC() {
 	fetch();
 
 	// invert the fetched data and just perform addition
@@ -488,13 +488,13 @@ uint8_t olc6502::SBC() {
 // stack instructions
 
 // pushes instructions to the stack
-uint8_t olc6502::PHA() {
+uint8_t MOS6502::PHA() {
 	write(0x0100 + stkp, a);
 	stkp--;
 	return 0;
 }
 
-uint8_t olc6502::PLA() {
+uint8_t MOS6502::PLA() {
 	stkp++;
 	a = read(0x0100 + stkp);
 	SetFlag(Z, a == 0x00);
@@ -502,7 +502,7 @@ uint8_t olc6502::PLA() {
 	return 0;
 }
 
-void olc6502::reset() {
+void MOS6502::reset() {
 
 	addr_abs = 0xFFFC;
 	uint16_t lo = read(0xFFFC + 0);
@@ -530,7 +530,7 @@ void olc6502::reset() {
 // interup requests. Interrupt requests are a complex operation and only happen if the
 // "disable interrupt" flag is 0. this allows current instruction to finish then the program counter is stored
 // on the stack
-void olc6502:: irq() {
+void MOS6502:: irq() {
 	if (GetFlag(I) == 0) {
 		write(0x0100 + stkp, (pc >> 8) & 0x00FF);
 		stkp--;
@@ -556,7 +556,7 @@ void olc6502:: irq() {
 // A Non-Maskable Interrupt cannot be ignored. It behaves in exactly the
 // same way as a regular IRQ, but reads the new program counter address
 // form location 0xFFFA.
-void olc6502::nmi()
+void MOS6502::nmi()
 {
 	write(0x0100 + stkp, (pc >> 8) & 0x00FF);
 	stkp--;
@@ -579,7 +579,7 @@ void olc6502::nmi()
 }
 
 // return status before interrupt;
-uint8_t olc6502::RTI() {
+uint8_t MOS6502::RTI() {
 	stkp++;
 	status = read(0x0100 + stkp);
 	status &= ~B;
@@ -595,21 +595,21 @@ uint8_t olc6502::RTI() {
 	return 0;
 }
 
-uint8_t olc6502::ASL()
+uint8_t MOS6502::ASL()
 {
 	fetch();
 	temp = static_cast<uint16_t>(fetched) << 1;
 	SetFlag(C, (temp & 0xFF00) > 0);
 	SetFlag(Z, (temp & 0x00FF) == 0x00);
 	SetFlag(N, temp & 0x80);
-	if (lookup[opcode].addrmode == &olc6502::IMP)
+	if (lookup[opcode].addrmode == &MOS6502::IMP)
 		a = temp & 0x00FF;
 	else
 		write(addr_abs, temp & 0x00FF);
 	return 0;
 }
 
-uint8_t olc6502::BIT() {
+uint8_t MOS6502::BIT() {
 	fetch();
 	temp = a & fetched;
 	SetFlag(Z, (temp & 0x00FF) == 0x00);
@@ -618,7 +618,7 @@ uint8_t olc6502::BIT() {
 	return 0;
 }
 
-uint8_t olc6502::BRK() {
+uint8_t MOS6502::BRK() {
 
 	pc++;
 
@@ -640,7 +640,7 @@ uint8_t olc6502::BRK() {
 }
 
 // compare memory and accumulation // FIRST ONE DONE BY ME
-uint8_t olc6502::CMP() {
+uint8_t MOS6502::CMP() {
 	fetch();
 	temp = a - fetched;
 	SetFlag(N, temp & 0x80);
@@ -650,7 +650,7 @@ uint8_t olc6502::CMP() {
 }
 
 // compare mmeory and index x
-uint8_t olc6502::CPX() {
+uint8_t MOS6502::CPX() {
 	fetch();
 	temp = static_cast<uint16_t>(x) - fetched;
 	SetFlag(N, temp & 0x80);
@@ -660,7 +660,7 @@ uint8_t olc6502::CPX() {
 }
 
 // compare mmeory and index y
-uint8_t olc6502::CPY() {
+uint8_t MOS6502::CPY() {
 	fetch();
 	temp = static_cast<uint16_t>(y) - fetched;
 	SetFlag(N, temp & 0x80);
@@ -669,7 +669,7 @@ uint8_t olc6502::CPY() {
 	return 0;
 }
 
-uint8_t olc6502::DEC() {
+uint8_t MOS6502::DEC() {
 	fetch();
 	temp = (fetched-1);
 	write(addr_abs, temp & 0x00FF); // need to further look into why he added this. I did everything else tho
@@ -679,7 +679,7 @@ uint8_t olc6502::DEC() {
 }
 
 
-uint8_t olc6502::DEX() {
+uint8_t MOS6502::DEX() {
 	x--;
 	SetFlag(Z, (x & 0x00FF) == 0x00);
 	SetFlag(N, x & 0x80);
@@ -687,7 +687,7 @@ uint8_t olc6502::DEX() {
 }
 
 // decrement
-uint8_t olc6502::DEY() {
+uint8_t MOS6502::DEY() {
 	y--;
 	SetFlag(Z, (y & 0x00FF) == 0x00);
 	SetFlag(N, y & 0x80);
@@ -695,7 +695,7 @@ uint8_t olc6502::DEY() {
 }
 
 //
-uint8_t olc6502::EOR() {
+uint8_t MOS6502::EOR() {
 	fetch();
 	// perform bitwise operation
 	a = a ^ fetched;
@@ -708,7 +708,7 @@ uint8_t olc6502::EOR() {
 	return 1;
 }
 
-uint8_t olc6502::INC() {
+uint8_t MOS6502::INC() {
 	fetch();
 	temp = (fetched+1);
 	write(addr_abs, temp & 0x00FF); // need to further look into why he added this. I did everything else tho
@@ -717,28 +717,28 @@ uint8_t olc6502::INC() {
 	return 0;
 }
 
-uint8_t olc6502::INX() {
+uint8_t MOS6502::INX() {
 	x++;
 	SetFlag(Z, (x & 0x00FF) == 0x00);
 	SetFlag(N, x & 0x80);
 	return 0;
 }
 
-uint8_t olc6502::INY() {
+uint8_t MOS6502::INY() {
 	y++;
 	SetFlag(Z, (y & 0x00FF) == 0x00);
 	SetFlag(N, y & 0x80);
 	return 0;
 }
 
-uint8_t olc6502::JMP() {
+uint8_t MOS6502::JMP() {
 	pc = addr_abs;
 	// std::cout << "PC: " << std::hex << pc << " OPCODE: " << std::hex << (int)opcode << std::endl;
 	return 0;
 }
 
 
-uint8_t olc6502::JSR() {
+uint8_t MOS6502::JSR() {
 	pc --;
 	write(0x0100 + stkp, (pc >> 8) & 0x00FF);
 	stkp--;
@@ -750,7 +750,7 @@ uint8_t olc6502::JSR() {
 	return 0;
 }
 // load accumulator
-uint8_t olc6502::LDA() {
+uint8_t MOS6502::LDA() {
 	fetch();
 	a = fetched;
 
@@ -760,7 +760,7 @@ uint8_t olc6502::LDA() {
 	return 0;
 }
 // load x register
-uint8_t olc6502::LDX() {
+uint8_t MOS6502::LDX() {
 	fetch();
 	x = fetched;
 
@@ -770,7 +770,7 @@ uint8_t olc6502::LDX() {
 	return 0;
 }
 
-uint8_t olc6502::LDY() {
+uint8_t MOS6502::LDY() {
 	fetch();
 	y = fetched;
 
@@ -781,13 +781,13 @@ uint8_t olc6502::LDY() {
 }
 
 // didnt understand this function and copied it
-uint8_t olc6502::LSR() {
+uint8_t MOS6502::LSR() {
 	fetch();
 	SetFlag(C, fetched & 0x0001);
 	temp = fetched >> 1;
 	SetFlag(Z, (temp & 0x00FF) == 0x0000);
 	SetFlag(N, temp & 0x0080);
-	if (lookup[opcode].addrmode == &olc6502::IMP)
+	if (lookup[opcode].addrmode == &MOS6502::IMP)
 		a = temp & 0x00FF;
 	else
 		write(addr_abs, temp & 0x00FF);
@@ -797,7 +797,7 @@ uint8_t olc6502::LSR() {
 // Consumes cycles/ added switch statment due to apparently javidx9 and the wiki said NES
 // games unintentially will use illegal OPcodes
 // making extra cycles for those cases
-uint8_t olc6502::NOP() {
+uint8_t MOS6502::NOP() {
 		switch (opcode) {
 			case 0x1C:
 			case 0x3C:
@@ -813,7 +813,7 @@ uint8_t olc6502::NOP() {
 }
 
 
-uint8_t olc6502::ORA() {
+uint8_t MOS6502::ORA() {
 	fetch();
 	// perform bitwise logical or operation
 	a = a | fetched;
@@ -827,7 +827,7 @@ uint8_t olc6502::ORA() {
 }
 
 // Push the proccesor status
-uint8_t olc6502::PHP() {
+uint8_t MOS6502::PHP() {
 	write(0x0100 + stkp, status | B | U);
 	/*SetFlag(B, false);
 	!TODO review this change
@@ -839,7 +839,7 @@ uint8_t olc6502::PHP() {
 
 // pull processor status
 // always need to ++ the stkp before reading and -- after writing
-uint8_t olc6502::PLP() {
+uint8_t MOS6502::PLP() {
 	stkp++;
 	status = (read(0x0100+stkp));
 
@@ -848,28 +848,28 @@ uint8_t olc6502::PLP() {
 	return 0;
 }
 
-uint8_t olc6502::ROL()
+uint8_t MOS6502::ROL()
 {
 	fetch();
 	temp = static_cast<uint16_t>((fetched << 1)) | GetFlag(C);
 	SetFlag(C, temp & 0xFF00);
 	SetFlag(Z, (temp & 0x00FF) == 0x0000);
 	SetFlag(N, temp & 0x0080);
-	if (lookup[opcode].addrmode == &olc6502::IMP)
+	if (lookup[opcode].addrmode == &MOS6502::IMP)
 		a = temp & 0x00FF;
 	else
 		write(addr_abs, temp & 0x00FF);
 	return 0;
 }
 
-uint8_t olc6502::ROR()
+uint8_t MOS6502::ROR()
 {
 	fetch();
 	temp = static_cast<uint16_t>((GetFlag(C) << 7)) | (fetched >> 1);
 	SetFlag(C, fetched & 0x01);
 	SetFlag(Z, (temp & 0x00FF) == 0x00);
 	SetFlag(N, temp & 0x0080);
-	if (lookup[opcode].addrmode == &olc6502::IMP)
+	if (lookup[opcode].addrmode == &MOS6502::IMP)
 		a = temp & 0x00FF;
 	else
 		write(addr_abs, temp & 0x00FF);
@@ -878,7 +878,7 @@ uint8_t olc6502::ROR()
 
 // reads stack address minus one and sets it to the program counter.
 // need to increment pc++ bc we are currently 1 step back.
-uint8_t olc6502::RTS() {
+uint8_t MOS6502::RTS() {
 	stkp++;
 	uint16_t lo = (static_cast<uint16_t>(read(stkp+0x0100)));
 
@@ -893,48 +893,48 @@ uint8_t olc6502::RTS() {
 }
 
 // set carry flag
-uint8_t olc6502::SEC() {
+uint8_t MOS6502::SEC() {
 	SetFlag(C, true);
 
 	return 0;
 }
 
 // set decmimal flag- I think unused
-uint8_t olc6502::SED() {
+uint8_t MOS6502::SED() {
 	SetFlag(D, true);
 
 	return 0;
 }
 
 // set interupt flag
-uint8_t olc6502::SEI() {
+uint8_t MOS6502::SEI() {
 	SetFlag(I, true);
 
 	return 0;
 }
 
 // store accumulator
-uint8_t olc6502::STA() {
+uint8_t MOS6502::STA() {
 	write(addr_abs, a);
 
 	return 0;
 }
 
 // store x register
-uint8_t olc6502::STX() {
+uint8_t MOS6502::STX() {
 	write(addr_abs, x);
 
 	return 0;
 }
 
 // store y register
-uint8_t olc6502::STY() {
+uint8_t MOS6502::STY() {
 	write(addr_abs, y);
 
 	return 0;
 }
 
-uint8_t olc6502::TAX() {
+uint8_t MOS6502::TAX() {
 	x = a;
 	SetFlag(Z, x == 0x00);
 	SetFlag(N, x & 0x80);
@@ -942,45 +942,45 @@ uint8_t olc6502::TAX() {
 	return 0;
 }
 
-uint8_t olc6502::TAY() {
+uint8_t MOS6502::TAY() {
 	y = a;
 	SetFlag(Z, y == 0x00);
 	SetFlag(N, y & 0x80);
 	return 0;
 }
 
-uint8_t olc6502::TSX() {
+uint8_t MOS6502::TSX() {
 	x = stkp;
 	SetFlag(Z, x == 0x00);
 	SetFlag(N, x & 0x80);
 	return 0;
 }
 
-uint8_t olc6502::TXA() {
+uint8_t MOS6502::TXA() {
 	a = x;
 	SetFlag(Z, a == 0x00);
 	SetFlag(N, a & 0x80);
 	return 0;
 }
 
-uint8_t olc6502::TXS() {
+uint8_t MOS6502::TXS() {
 	stkp = x;
 	return 0;
 }
 
-uint8_t olc6502::TYA() {
+uint8_t MOS6502::TYA() {
 	a = y;
 	SetFlag(Z, a == 0x00);
 	SetFlag(N, a & 0x80);
 	return 0;
 }
 
-uint8_t olc6502::XXX() {
+uint8_t MOS6502::XXX() {
 	return 0;
 }
 
 
-std::map<uint16_t, std::string> olc6502::disassemble(uint16_t nStart, uint16_t nStop)
+std::map<uint16_t, std::string> MOS6502::disassemble(uint16_t nStart, uint16_t nStop)
 {
 	uint32_t addr = nStart;
 	uint8_t value = 0x00, lo = 0x00, hi = 0x00;
@@ -1022,70 +1022,70 @@ std::map<uint16_t, std::string> olc6502::disassemble(uint16_t nStart, uint16_t n
 		// routines mimmick the actual fetch routine of the
 		// 6502 in order to get accurate data as part of the
 		// instruction
-		if (lookup[opcode].addrmode == &olc6502::IMP)
+		if (lookup[opcode].addrmode == &MOS6502::IMP)
 		{
 			sInst += " {IMP}";
 		}
-		else if (lookup[opcode].addrmode == &olc6502::IMM)
+		else if (lookup[opcode].addrmode == &MOS6502::IMM)
 		{
 			value = bus->cpuRead(addr, true); addr++;
 			sInst += "#$" + hex(value, 2) + " {IMM}";
 		}
-		else if (lookup[opcode].addrmode == &olc6502::ZP0)
+		else if (lookup[opcode].addrmode == &MOS6502::ZP0)
 		{
 			lo = bus->cpuRead(addr, true); addr++;
 			hi = 0x00;
 			sInst += "$" + hex(lo, 2) + " {ZP0}";
 		}
-		else if (lookup[opcode].addrmode == &olc6502::ZPX)
+		else if (lookup[opcode].addrmode == &MOS6502::ZPX)
 		{
 			lo = bus->cpuRead(addr, true); addr++;
 			hi = 0x00;
 			sInst += "$" + hex(lo, 2) + ", X {ZPX}";
 		}
-		else if (lookup[opcode].addrmode == &olc6502::ZPY)
+		else if (lookup[opcode].addrmode == &MOS6502::ZPY)
 		{
 			lo = bus->cpuRead(addr, true); addr++;
 			hi = 0x00;
 			sInst += "$" + hex(lo, 2) + ", Y {ZPY}";
 		}
-		else if (lookup[opcode].addrmode == &olc6502::IZX)
+		else if (lookup[opcode].addrmode == &MOS6502::IZX)
 		{
 			lo = bus->cpuRead(addr, true); addr++;
 			hi = 0x00;
 			sInst += "($" + hex(lo, 2) + ", X) {IZX}";
 		}
-		else if (lookup[opcode].addrmode == &olc6502::IZY)
+		else if (lookup[opcode].addrmode == &MOS6502::IZY)
 		{
 			lo = bus->cpuRead(addr, true); addr++;
 			hi = 0x00;
 			sInst += "($" + hex(lo, 2) + "), Y {IZY}";
 		}
-		else if (lookup[opcode].addrmode == &olc6502::ABS)
+		else if (lookup[opcode].addrmode == &MOS6502::ABS)
 		{
 			lo = bus->cpuRead(addr, true); addr++;
 			hi = bus->cpuRead(addr, true); addr++;
 			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + " {ABS}";
 		}
-		else if (lookup[opcode].addrmode == &olc6502::ABX)
+		else if (lookup[opcode].addrmode == &MOS6502::ABX)
 		{
 			lo = bus->cpuRead(addr, true); addr++;
 			hi = bus->cpuRead(addr, true); addr++;
 			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", X {ABX}";
 		}
-		else if (lookup[opcode].addrmode == &olc6502::ABY)
+		else if (lookup[opcode].addrmode == &MOS6502::ABY)
 		{
 			lo = bus->cpuRead(addr, true); addr++;
 			hi = bus->cpuRead(addr, true); addr++;
 			sInst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", Y {ABY}";
 		}
-		else if (lookup[opcode].addrmode == &olc6502::IND)
+		else if (lookup[opcode].addrmode == &MOS6502::IND)
 		{
 			lo = bus->cpuRead(addr, true); addr++;
 			hi = bus->cpuRead(addr, true); addr++;
 			sInst += "($" + hex((uint16_t)(hi << 8) | lo, 4) + ") {IND}";
 		}
-		else if (lookup[opcode].addrmode == &olc6502::REL)
+		else if (lookup[opcode].addrmode == &MOS6502::REL)
 		{
 			value = bus->cpuRead(addr, true); addr++;
 			sInst += "$" + hex(value, 2) + " [$" + hex(addr + value, 4) + "] {REL}";
@@ -1102,7 +1102,7 @@ std::map<uint16_t, std::string> olc6502::disassemble(uint16_t nStart, uint16_t n
 } 
 
 
-bool olc6502::complete()
+bool MOS6502::complete()
 {
 	return cycles == 0;
 }

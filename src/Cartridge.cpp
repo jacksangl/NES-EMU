@@ -48,6 +48,11 @@ bool Cartridge::ppuWrite(uint16_t addr, uint8_t data) {
 	}
 	return false;
 }
+
+bool Cartridge::ImageValid() const {
+	return bImageValid;
+}
+
 Cartridge::Cartridge(const std::string &sFileName) {
 	struct sHeader {
 		uint8_t prg_rom_chunks;
@@ -59,6 +64,9 @@ Cartridge::Cartridge(const std::string &sFileName) {
 		uint8_t tv_system2;
 		char unused[5];
 	} header;
+	
+	bImageValid = false; // Initialize as invalid
+	
 	std:: ifstream ifs;
 	ifs.open(sFileName, std::ifstream::binary);
 	if (ifs.is_open()) {
@@ -90,7 +98,16 @@ Cartridge::Cartridge(const std::string &sFileName) {
 		switch (nMapperID) {
 			case 0: pMapper = std::make_shared<Mapper_000>(nPRGBanks, nCHRBanks); break;
 		}
+		
+		// Set as valid if we successfully loaded data and created a mapper
+		if (pMapper && !vPRGMemory.empty()) {
+			bImageValid = true;
+		}
+		
 		ifs.close();
-
 	}
+}
+
+Cartridge::~Cartridge() {
+	// Destructor implementation (pMapper will be automatically cleaned up)
 }

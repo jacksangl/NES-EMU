@@ -2,10 +2,9 @@
 // Created by Jack Sangl on 5/30/25.
 //
 
-#ifdef MAPPER_H
+#ifndef MAPPER_H
 #define MAPPER_H
-
-
+#include <cstdint>
 
 class Mapper {
 public:
